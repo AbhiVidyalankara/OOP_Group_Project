@@ -7,7 +7,7 @@ MEDICARE MANAGEMENT SYSTEM - HOW TO RUN
    cd src
 
 3. Compile (Windows):
-   javac Datastore.java MedicareApp.java "Doctor Management\Doctor.java" "Doctor Management\DoctorService.java" "Patient Management\Patient.java" "Patient Management\PatientService.java" "Appoinment Shedule\Appointment.java" "Appoinment Shedule\Scheduler.java" "Assign Doctor to Patient\DoctorAssignment.java" "Assign Doctor to Patient\AssignmentService.java" "Monthly Report Generate\MonthlyReport.java"
+   javac -d . Datastore.java "Doctor Management\Doctor.java" "Patient Management\Patient.java" "Appoinment Shedule\Appointment.java" "Doctor Management\DoctorService.java" "Patient Management\PatientService.java" "Appoinment Shedule\Scheduler.java" "Assign Doctor to Patient\DoctorAssignment.java" "Assign Doctor to Patient\AssignmentService.java" "Monthly Report Generate\MonthlyReport.java" MedicareApp.java
 
 4. Run:
    java Medicare.MedicareApp
