@@ -4,29 +4,23 @@ import java.util.ArrayList;
 
 public class DoctorService {
 
-    private ArrayList<Doctor> doctors = new ArrayList<>();
-
-    public DoctorService() {}
-
     public void loadDoctors(ArrayList<Doctor> loadedList) {
         if (loadedList != null) {
-            this.doctors = loadedList;
+            Datastore.store.doctors = loadedList;
         }
     }
 
     public ArrayList<Doctor> getDoctors() {
-        return doctors;
+        return Datastore.store.doctors;
     }
 
-    // ADD doctor
     public void addDoctor(Doctor doctor) {
-        doctors.add(doctor);
+        Datastore.store.doctors.add(doctor);
         System.out.println("Doctor added successfully!");
     }
 
-    // UPDATE doctor
     public boolean updateDoctor(String id, String newName, String newSpecialty) {
-        for (Doctor d : doctors) {
+        for (Doctor d : Datastore.store.doctors) {
             if (d.getId().equals(id)) {
                 d.setName(newName);
                 d.setSpecialty(newSpecialty);
@@ -38,11 +32,10 @@ public class DoctorService {
         return false;
     }
 
-    // DELETE doctor
     public boolean deleteDoctor(String id) {
-        for (Doctor d : doctors) {
+        for (Doctor d : Datastore.store.doctors) {
             if (d.getId().equals(id)) {
-                doctors.remove(d);
+                Datastore.store.doctors.remove(d);
                 System.out.println("Doctor removed successfully!");
                 return true;
             }
@@ -51,13 +44,12 @@ public class DoctorService {
         return false;
     }
 
-    // LIST doctors
     public void listDoctors() {
-        if (doctors.isEmpty()) {
+        if (Datastore.store.doctors.isEmpty()) {
             System.out.println("No doctors available.");
         } else {
             System.out.println("\n--- Doctor List ---");
-            for (Doctor d : doctors) {
+            for (Doctor d : Datastore.store.doctors) {
                 System.out.println(d);
             }
         }
