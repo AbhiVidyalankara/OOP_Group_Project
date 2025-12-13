@@ -127,8 +127,8 @@ public class MedicareApp {
             
             if (Scheduler.isAvailable(doctorId, date, time)) {
                 Datastore.store.appointments.add(new Appointment(id, doctorId, patientId, date, time, "Scheduled"));
-                sendNotification(doctorId, "New appointment with Patient " + patientId + " on " + date);
-                sendNotification(patientId, "Appointment confirmed with Doctor " + doctorId + " on " + date);
+                NotificationManager.sendToDoctor(doctorId, "New appointment with Patient " + patientId + " on " + date);
+                NotificationManager.sendToPatient(patientId, "Appointment confirmed with Doctor " + doctorId + " on " + date);
                 System.out.println("Appointment scheduled! Notifications sent.");
             } else {
                 System.out.println("Time slot not available!");
@@ -141,8 +141,8 @@ public class MedicareApp {
             for (Appointment a : Datastore.store.appointments) {
                 if (a.id.equals(id)) {
                     a.setStatus(status);
-                    sendNotification(a.doctorId, "Appointment " + id + " status: " + status);
-                    sendNotification(a.patientId, "Your appointment status: " + status);
+                    NotificationManager.sendToDoctor(a.doctorId, "Appointment " + id + " status: " + status);
+                    NotificationManager.sendToPatient(a.patientId, "Your appointment status: " + status);
                     System.out.println("Status updated! Notifications sent.");
                     return;
                 }
@@ -167,7 +167,7 @@ public class MedicareApp {
             System.out.print("Doctor ID: ");
             String doctorId = scanner.nextLine();
             assignmentService.assignDoctor(patientId, doctorId);
-            sendNotification(doctorId, "New patient assigned: " + patientId);
+            NotificationManager.sendToDoctor(doctorId, "New patient assigned: " + patientId);
         } else if (choice == 2) {
             System.out.print("Patient ID: ");
             String patientId = scanner.nextLine();
@@ -178,10 +178,10 @@ public class MedicareApp {
             String doctorId = assignmentService.autoAssignDoctor(specialty, urgency);
             if (doctorId != null) {
                 assignmentService.assignDoctor(patientId, doctorId);
-                sendNotification(doctorId, "Auto-assigned patient: " + patientId + " (" + urgency + " urgency)");
+                NotificationManager.sendToDoctor(doctorId, "Auto-assigned patient: " + patientId);
                 System.out.println("Doctor " + doctorId + " auto-assigned!");
             } else {
-                System.out.println("No available doctor found for specialty: " + specialty);
+                System.out.println("No available doctor for specialty: " + specialty);
             }
         }
     }
@@ -197,30 +197,19 @@ public class MedicareApp {
         System.out.print("Choose: ");
         int choice = scanner.nextInt();
         scanner.nextLine();
-        
         System.out.print("Enter ID: ");
         String id = scanner.nextLine();
         
         if (choice == 1) {
-            System.out.println("\n--- Doctor Notifications ---");
-            for (String msg : getNotifications(id)) {
-                System.out.println(msg);
+            System.out.println("\n--- Doctor Notifications for " + id + " ---");
+            for (Notification n : NotificationManager.getDoctorNotifications(id)) {
+                System.out.println(n);
             }
         } else if (choice == 2) {
-            System.out.println("\n--- Patient Notifications ---");
-            for (String msg : getNotifications(id)) {
-                System.out.println(msg);
+            System.out.println("\n--- Patient Notifications for " + id + " ---");
+            for (Notification n : NotificationManager.getPatientNotifications(id)) {
+                System.out.println(n);
             }
         }
-    }
-    
-    private static void sendNotification(String userId, String message) {
-        System.out.println("[NOTIFICATION to " + userId + "]: " + message);
-    }
-    
-    private static java.util.ArrayList<String> getNotifications(String userId) {
-        java.util.ArrayList<String> notifications = new java.util.ArrayList<>();
-        notifications.add("Sample notification for " + userId);
-        return notifications;
     }
 }
