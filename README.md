@@ -38,10 +38,13 @@ A comprehensive healthcare management system built with Java, featuring both con
 
 ### Console Version
 ```bash
-cd src
-javac -d . Datastore.java "Doctor Management\Doctor.java" "Patient Management\Patient.java" "Appoinment Shedule\Appointment.java" "Doctor Management\DoctorService.java" "Patient Management\PatientService.java" "Appoinment Shedule\Scheduler.java" "Assign Doctor to Patient\DoctorAssignment.java" "Assign Doctor to Patient\AssignmentService.java" "Monthly Report Generate\MonthlyReport.java" MedicareApp.java
+cd src/Medicare
+javac *.java
+cd ..
 java Medicare.MedicareApp
 ```
+
+Or simply run: `src/run.bat`
 
 ### GUI Version
 ```bash
