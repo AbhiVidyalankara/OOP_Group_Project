@@ -17,6 +17,15 @@ public class AssignmentService {
         System.out.println("Doctor assigned successfully!");
     }
     
+    public String autoAssignDoctor(String specialty, String urgency) {
+        for (Doctor d : Datastore.store.doctors) {
+            if (d.getSpecialty().equalsIgnoreCase(specialty) && d.isAvailable()) {
+                return d.getId();
+            }
+        }
+        return null;
+    }
+    
     public String getAssignedDoctor(String patientId) {
         for (DoctorAssignment a : assignments) {
             if (a.getPatientId().equals(patientId)) {

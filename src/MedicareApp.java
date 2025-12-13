@@ -23,7 +23,8 @@ public class MedicareApp {
             System.out.println("3. Appointment Scheduling");
             System.out.println("4. Assign Doctor to Patient");
             System.out.println("5. Generate Monthly Report");
-            System.out.println("6. Exit");
+            System.out.println("6. View Notifications");
+            System.out.println("7. Exit");
             System.out.print("Choose: ");
             
             int choice = scanner.nextInt();
@@ -35,7 +36,8 @@ public class MedicareApp {
                 case 3: appointmentMenu(); break;
                 case 4: assignDoctorMenu(); break;
                 case 5: generateReport(); break;
-                case 6:
+                case 6: viewNotifications(); break;
+                case 7:
                     Datastore.store.save();
                     System.out.println("Goodbye!");
                     return;
@@ -106,7 +108,7 @@ public class MedicareApp {
     }
     
     private static void appointmentMenu() {
-        System.out.println("\n1. Schedule Appointment\n2. List Appointments");
+        System.out.println("\n1. Schedule Appointment\n2. Update Status\n3. List Appointments");
         System.out.print("Choose: ");
         int choice = scanner.nextInt();
         scanner.nextLine();
@@ -125,11 +127,28 @@ public class MedicareApp {
             
             if (Scheduler.isAvailable(doctorId, date, time)) {
                 Datastore.store.appointments.add(new Appointment(id, doctorId, patientId, date, time, "Scheduled"));
-                System.out.println("Appointment scheduled!");
+                sendNotification(doctorId, "New appointment with Patient " + patientId + " on " + date);
+                sendNotification(patientId, "Appointment confirmed with Doctor " + doctorId + " on " + date);
+                System.out.println("Appointment scheduled! Notifications sent.");
             } else {
                 System.out.println("Time slot not available!");
             }
         } else if (choice == 2) {
+            System.out.print("Appointment ID: ");
+            String id = scanner.nextLine();
+            System.out.print("New Status (Scheduled/Completed/Canceled/Delayed): ");
+            String status = scanner.nextLine();
+            for (Appointment a : Datastore.store.appointments) {
+                if (a.id.equals(id)) {
+                    a.setStatus(status);
+                    sendNotification(a.doctorId, "Appointment " + id + " status: " + status);
+                    sendNotification(a.patientId, "Your appointment status: " + status);
+                    System.out.println("Status updated! Notifications sent.");
+                    return;
+                }
+            }
+            System.out.println("Appointment not found!");
+        } else if (choice == 3) {
             for (Appointment a : Datastore.store.appointments) {
                 System.out.println(a.id + " - Dr:" + a.doctorId + " Pt:" + a.patientId + " " + a.date + " " + a.time + " [" + a.status + "]");
             }
@@ -137,16 +156,71 @@ public class MedicareApp {
     }
     
     private static void assignDoctorMenu() {
-        System.out.print("Patient ID: ");
-        String patientId = scanner.nextLine();
-        System.out.print("Doctor ID: ");
-        String doctorId = scanner.nextLine();
-        assignmentService.assignDoctor(patientId, doctorId);
+        System.out.println("\n1. Manual Assignment\n2. Auto Assignment");
+        System.out.print("Choose: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+        
+        if (choice == 1) {
+            System.out.print("Patient ID: ");
+            String patientId = scanner.nextLine();
+            System.out.print("Doctor ID: ");
+            String doctorId = scanner.nextLine();
+            assignmentService.assignDoctor(patientId, doctorId);
+            sendNotification(doctorId, "New patient assigned: " + patientId);
+        } else if (choice == 2) {
+            System.out.print("Patient ID: ");
+            String patientId = scanner.nextLine();
+            System.out.print("Required Specialty: ");
+            String specialty = scanner.nextLine();
+            System.out.print("Urgency (High/Normal/Low): ");
+            String urgency = scanner.nextLine();
+            String doctorId = assignmentService.autoAssignDoctor(specialty, urgency);
+            if (doctorId != null) {
+                assignmentService.assignDoctor(patientId, doctorId);
+                sendNotification(doctorId, "Auto-assigned patient: " + patientId + " (" + urgency + " urgency)");
+                System.out.println("Doctor " + doctorId + " auto-assigned!");
+            } else {
+                System.out.println("No available doctor found for specialty: " + specialty);
+            }
+        }
     }
     
     private static void generateReport() {
         System.out.print("Year-Month (YYYY-MM): ");
         YearMonth month = YearMonth.parse(scanner.nextLine());
         System.out.println(MonthlyReport.generateReport(month));
+    }
+    
+    private static void viewNotifications() {
+        System.out.println("\n1. Doctor Notifications\n2. Patient Notifications");
+        System.out.print("Choose: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+        
+        System.out.print("Enter ID: ");
+        String id = scanner.nextLine();
+        
+        if (choice == 1) {
+            System.out.println("\n--- Doctor Notifications ---");
+            for (String msg : getNotifications(id)) {
+                System.out.println(msg);
+            }
+        } else if (choice == 2) {
+            System.out.println("\n--- Patient Notifications ---");
+            for (String msg : getNotifications(id)) {
+                System.out.println(msg);
+            }
+        }
+    }
+    
+    private static void sendNotification(String userId, String message) {
+        System.out.println("[NOTIFICATION to " + userId + "]: " + message);
+    }
+    
+    private static java.util.ArrayList<String> getNotifications(String userId) {
+        java.util.ArrayList<String> notifications = new java.util.ArrayList<>();
+        notifications.add("Sample notification for " + userId);
+        return notifications;
     }
 }

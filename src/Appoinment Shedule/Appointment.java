@@ -1,4 +1,3 @@
-// --- Appointment.java ---
 package Medicare;
 
 import java.io.Serializable;
@@ -13,6 +12,7 @@ public class Appointment implements Serializable {
     public LocalDate date;
     public LocalTime time;
     public String status;
+    public String urgency;
 
     public Appointment(String id, String doctorId, String patientId, LocalDate date, LocalTime time, String status) {
         this.id = id;
@@ -21,5 +21,9 @@ public class Appointment implements Serializable {
         this.date = date;
         this.time = time;
         this.status = status;
+        this.urgency = "Normal";
     }
+    
+    public void setStatus(String status) { this.status = status; }
+    public void setUrgency(String urgency) { this.urgency = urgency; }
 }

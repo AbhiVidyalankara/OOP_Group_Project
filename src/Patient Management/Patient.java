@@ -8,55 +8,27 @@ public class Patient implements Serializable {
     private String id;
     private String name;
     private String phone;
+    private String medicalHistory;
 
-    // Constructor
     public Patient(String id, String name, String phone) {
         this.id = id;
         this.name = name;
         this.phone = phone;
+        this.medicalHistory = "";
     }
 
-    // Getters
-    public String getId() {
-        return id;
-    }
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public String getPhone() { return phone; }
+    public String getMedicalHistory() { return medicalHistory; }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    // Setters
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+    public void setId(String id) { this.id = id; }
+    public void setName(String name) { this.name = name; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public void setMedicalHistory(String medicalHistory) { this.medicalHistory = medicalHistory; }
 
     @Override
     public String toString() {
         return name + " [" + id + "]";
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Patient patient = (Patient) obj;
-        return id != null && id.equals(patient.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return id != null ? id.hashCode() : 0;
     }
 }

@@ -15,6 +15,7 @@ public class MedicareGUI extends JFrame {
         tabbedPane.addTab("Patients", new PatientPanel());
         tabbedPane.addTab("Appointments", new AppointmentPanel());
         tabbedPane.addTab("Reports", new ReportPanel());
+        tabbedPane.addTab("Notifications", new NotificationPanel());
         
         add(tabbedPane);
     }
