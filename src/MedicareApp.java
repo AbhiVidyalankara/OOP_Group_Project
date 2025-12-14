@@ -1,215 +1,157 @@
-package Medicare;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.YearMonth;
-import java.util.Scanner;
-
-public class MedicareApp {
+public class MedicareApp extends JFrame {
     private static DoctorService doctorService = new DoctorService();
     private static PatientService patientService = new PatientService();
     private static AssignmentService assignmentService = new AssignmentService();
-    private static Scanner scanner = new Scanner(System.in);
+    private static DoctorPanel doctorPanel;
+    private static PatientPanel patientPanel;
+    private static AppointmentPanel appointmentPanel;
+    private JTabbedPane tabbedPane;
+    private static MedicareApp instance;
+    
+    public MedicareApp() {
+        instance = this;
+        setTitle("MedicarePlus");
+        setSize(1200, 700);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        
+        initComponents();
+        startStatusUpdateTimer();
+        
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                Datastore.store.save();
+                System.exit(0);
+            }
+        });
+    }
+    
+    private void initComponents() {
+        tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        doctorPanel = new DoctorPanel(doctorService);
+        patientPanel = new PatientPanel(patientService);
+        appointmentPanel = new AppointmentPanel();
+        
+        tabbedPane.addTab("Dashboard", createDashboardPanel());
+        tabbedPane.addTab("Doctors", doctorPanel);
+        tabbedPane.addTab("Patients", patientPanel);
+        tabbedPane.addTab("Appointments", appointmentPanel);
+        tabbedPane.addTab("Reports", new ReportPanel());
+        tabbedPane.addTab("Notifications", new NotificationPanel());
+        
+        add(tabbedPane);
+    }
+    
+    private JPanel createDashboardPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(new Color(240, 248, 255));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        JLabel title = new JLabel("MedicarePlus", SwingConstants.CENTER);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 32));
+        title.setForeground(new Color(0, 102, 204));
+        panel.add(title, BorderLayout.NORTH);
+        
+        JPanel statsPanel = new JPanel(new GridLayout(2, 2, 20, 20));
+        statsPanel.setOpaque(false);
+        statsPanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
+        
+        statsPanel.add(createStatCard("Total Doctors", String.valueOf(Datastore.store.doctors.size()), new Color(52, 152, 219)));
+        statsPanel.add(createStatCard("Total Patients", String.valueOf(Datastore.store.patients.size()), new Color(46, 204, 113)));
+        statsPanel.add(createStatCard("Total Appointments", String.valueOf(Datastore.store.appointments.size()), new Color(155, 89, 182)));
+        statsPanel.add(createStatCard("Doctors Active Today", String.valueOf(getTodayAppointments()), new Color(230, 126, 34)));
+        
+        panel.add(statsPanel, BorderLayout.CENTER);
+        
+        JLabel footer = new JLabel("Advanced Healthcare Management Platform", SwingConstants.CENTER);
+        footer.setFont(new Font("Segoe UI", Font.ITALIC, 14));
+        footer.setForeground(Color.GRAY);
+        panel.add(footer, BorderLayout.SOUTH);
+        
+        return panel;
+    }
+    
+    private JPanel createStatCard(String label, String value, Color color) {
+        JPanel card = new JPanel(new BorderLayout(10, 10));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(color, 2),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        
+        JLabel valueLabel = new JLabel(value, SwingConstants.CENTER);
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 48));
+        valueLabel.setForeground(color);
+        
+        JLabel textLabel = new JLabel(label, SwingConstants.CENTER);
+        textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        textLabel.setForeground(Color.DARK_GRAY);
+        
+        card.add(valueLabel, BorderLayout.CENTER);
+        card.add(textLabel, BorderLayout.SOUTH);
+        
+        return card;
+    }
+    
+    private int getTodayAppointments() {
+        int count = 0;
+        for (Doctor doctor : Datastore.store.doctors) {
+            if (doctor.isAvailableToday()) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    public static DoctorService getDoctorService() { return doctorService; }
+    public static PatientService getPatientService() { return patientService; }
+    public static AssignmentService getAssignmentService() { return assignmentService; }
+    
+    public static void refreshAllPanels() {
+        updateDoctorStatuses();
+        if (doctorPanel != null) doctorPanel.refreshTable();
+        if (patientPanel != null) patientPanel.refreshTable();
+        if (appointmentPanel != null) appointmentPanel.refreshTable();
+        if (instance != null) {
+            instance.tabbedPane.setComponentAt(0, instance.createDashboardPanel());
+        }
+        Datastore.store.save();
+    }
+    
+    private static void updateDoctorStatuses() {
+        for (Doctor doctor : Datastore.store.doctors) {
+            doctor.isAvailableToday(); // This triggers status update
+        }
+    }
+    
+    private void startStatusUpdateTimer() {
+        Timer timer = new Timer(60000, e -> {
+            updateDoctorStatuses();
+            if (doctorPanel != null) doctorPanel.refreshTable();
+            tabbedPane.setComponentAt(0, createDashboardPanel());
+        });
+        timer.start();
+    }
     
     public static void main(String[] args) {
+        DatabaseConnection.initDatabase();
         Datastore.store.load();
         doctorService.loadDoctors(Datastore.store.doctors);
         patientService.loadPatients(Datastore.store.patients);
         
-        while (true) {
-            System.out.println("\n=== MEDICARE SYSTEM ===");
-            System.out.println("1. Doctor Management");
-            System.out.println("2. Patient Management");
-            System.out.println("3. Appointment Scheduling");
-            System.out.println("4. Assign Doctor to Patient");
-            System.out.println("5. Generate Monthly Report");
-            System.out.println("6. View Notifications");
-            System.out.println("7. Exit");
-            System.out.print("Choose: ");
-            
-            int choice = scanner.nextInt();
-            scanner.nextLine();
-            
-            switch (choice) {
-                case 1: doctorMenu(); break;
-                case 2: patientMenu(); break;
-                case 3: appointmentMenu(); break;
-                case 4: assignDoctorMenu(); break;
-                case 5: generateReport(); break;
-                case 6: viewNotifications(); break;
-                case 7:
-                    Datastore.store.save();
-                    System.out.println("Goodbye!");
-                    return;
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        }
-    }
-    
-    private static void doctorMenu() {
-        System.out.println("\n1. Add Doctor\n2. Update Doctor\n3. Delete Doctor\n4. List Doctors");
-        System.out.print("Choose: ");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        
-        if (choice == 1) {
-            System.out.print("ID: ");
-            String id = scanner.nextLine();
-            System.out.print("Name: ");
-            String name = scanner.nextLine();
-            System.out.print("Specialty: ");
-            String specialty = scanner.nextLine();
-            doctorService.addDoctor(new Doctor(id, name, specialty));
-        } else if (choice == 2) {
-            System.out.print("Doctor ID: ");
-            String id = scanner.nextLine();
-            System.out.print("New Name: ");
-            String name = scanner.nextLine();
-            System.out.print("New Specialty: ");
-            String specialty = scanner.nextLine();
-            doctorService.updateDoctor(id, name, specialty);
-        } else if (choice == 3) {
-            System.out.print("Doctor ID: ");
-            String id = scanner.nextLine();
-            doctorService.deleteDoctor(id);
-        } else if (choice == 4) {
-            doctorService.listDoctors();
-        }
-    }
-    
-    private static void patientMenu() {
-        System.out.println("\n1. Add Patient\n2. Update Patient\n3. Delete Patient\n4. List Patients");
-        System.out.print("Choose: ");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        
-        if (choice == 1) {
-            System.out.print("ID: ");
-            String id = scanner.nextLine();
-            System.out.print("Name: ");
-            String name = scanner.nextLine();
-            System.out.print("Phone: ");
-            String phone = scanner.nextLine();
-            patientService.addPatient(new Patient(id, name, phone));
-        } else if (choice == 2) {
-            System.out.print("Patient ID: ");
-            String id = scanner.nextLine();
-            System.out.print("New Name: ");
-            String name = scanner.nextLine();
-            System.out.print("New Phone: ");
-            String phone = scanner.nextLine();
-            patientService.updatePatient(id, name, phone);
-        } else if (choice == 3) {
-            System.out.print("Patient ID: ");
-            String id = scanner.nextLine();
-            patientService.deletePatient(id);
-        } else if (choice == 4) {
-            patientService.listPatients();
-        }
-    }
-    
-    private static void appointmentMenu() {
-        System.out.println("\n1. Schedule Appointment\n2. Update Status\n3. List Appointments");
-        System.out.print("Choose: ");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        
-        if (choice == 1) {
-            System.out.print("Appointment ID: ");
-            String id = scanner.nextLine();
-            System.out.print("Doctor ID: ");
-            String doctorId = scanner.nextLine();
-            System.out.print("Patient ID: ");
-            String patientId = scanner.nextLine();
-            System.out.print("Date (YYYY-MM-DD): ");
-            LocalDate date = LocalDate.parse(scanner.nextLine());
-            System.out.print("Time (HH:MM): ");
-            LocalTime time = LocalTime.parse(scanner.nextLine());
-            
-            if (Scheduler.isAvailable(doctorId, date, time)) {
-                Datastore.store.appointments.add(new Appointment(id, doctorId, patientId, date, time, "Scheduled"));
-                NotificationManager.sendToDoctor(doctorId, "New appointment with Patient " + patientId + " on " + date);
-                NotificationManager.sendToPatient(patientId, "Appointment confirmed with Doctor " + doctorId + " on " + date);
-                System.out.println("Appointment scheduled! Notifications sent.");
-            } else {
-                System.out.println("Time slot not available!");
-            }
-        } else if (choice == 2) {
-            System.out.print("Appointment ID: ");
-            String id = scanner.nextLine();
-            System.out.print("New Status (Scheduled/Completed/Canceled/Delayed): ");
-            String status = scanner.nextLine();
-            for (Appointment a : Datastore.store.appointments) {
-                if (a.id.equals(id)) {
-                    a.setStatus(status);
-                    NotificationManager.sendToDoctor(a.doctorId, "Appointment " + id + " status: " + status);
-                    NotificationManager.sendToPatient(a.patientId, "Your appointment status: " + status);
-                    System.out.println("Status updated! Notifications sent.");
-                    return;
-                }
-            }
-            System.out.println("Appointment not found!");
-        } else if (choice == 3) {
-            for (Appointment a : Datastore.store.appointments) {
-                System.out.println(a.id + " - Dr:" + a.doctorId + " Pt:" + a.patientId + " " + a.date + " " + a.time + " [" + a.status + "]");
-            }
-        }
-    }
-    
-    private static void assignDoctorMenu() {
-        System.out.println("\n1. Manual Assignment\n2. Auto Assignment");
-        System.out.print("Choose: ");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        
-        if (choice == 1) {
-            System.out.print("Patient ID: ");
-            String patientId = scanner.nextLine();
-            System.out.print("Doctor ID: ");
-            String doctorId = scanner.nextLine();
-            assignmentService.assignDoctor(patientId, doctorId);
-            NotificationManager.sendToDoctor(doctorId, "New patient assigned: " + patientId);
-        } else if (choice == 2) {
-            System.out.print("Patient ID: ");
-            String patientId = scanner.nextLine();
-            System.out.print("Required Specialty: ");
-            String specialty = scanner.nextLine();
-            System.out.print("Urgency (High/Normal/Low): ");
-            String urgency = scanner.nextLine();
-            String doctorId = assignmentService.autoAssignDoctor(specialty, urgency);
-            if (doctorId != null) {
-                assignmentService.assignDoctor(patientId, doctorId);
-                NotificationManager.sendToDoctor(doctorId, "Auto-assigned patient: " + patientId);
-                System.out.println("Doctor " + doctorId + " auto-assigned!");
-            } else {
-                System.out.println("No available doctor for specialty: " + specialty);
-            }
-        }
-    }
-    
-    private static void generateReport() {
-        System.out.print("Year-Month (YYYY-MM): ");
-        YearMonth month = YearMonth.parse(scanner.nextLine());
-        System.out.println(MonthlyReport.generateReport(month));
-    }
-    
-    private static void viewNotifications() {
-        System.out.println("\n1. Doctor Notifications\n2. Patient Notifications");
-        System.out.print("Choose: ");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        System.out.print("Enter ID: ");
-        String id = scanner.nextLine();
-        
-        if (choice == 1) {
-            System.out.println("\n--- Doctor Notifications for " + id + " ---");
-            for (Notification n : NotificationManager.getDoctorNotifications(id)) {
-                System.out.println(n);
-            }
-        } else if (choice == 2) {
-            System.out.println("\n--- Patient Notifications for " + id + " ---");
-            for (Notification n : NotificationManager.getPatientNotifications(id)) {
-                System.out.println(n);
-            }
-        }
+            new MedicareApp().setVisible(true);
+        });
     }
 }
